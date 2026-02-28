@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學測高頻單字閃卡 (極速發音版)</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-front-bg: #2c3e50;
+            --card-front-text: #ffffff;
+            --card-back-bg: #ffffff;
+            --card-back-text: #333333;
+            --accent-color: #e74c3c;
+            --btn-color: #3498db;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .scene {
+            width: 340px;
+            height: 520px;
+            perspective: 1000px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-radius: 20px;
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card__face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card__face--front {
+            background-color: var(--card-front-bg);
+            color: var(--card-front-text);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .word-main {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .word-ipa {
+            font-family: "Lucida Console", Monaco, monospace;
+            font-size: 1.3rem;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+        }
+
+        .word-pos {
+            font-style: italic;
+            font-size: 1.1rem;
+            color: #95a5a6;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 10px;
+            border-radius: 10px;
+        }
+
+        .btn-speak-front {
+            background-color: var(--btn-color);
+            border: none;
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, background-color 0.2s;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn-speak-front:active {
+            transform: scale(0.95);
+            background-color: #2980b9;
+        }
+
+        .btn-speak-front svg {
+            fill: white;
+            width: 32px;
+            height: 32px;
+        }
+
+        .hint-text {
+            position: absolute;
+            bottom: 20px;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.85rem;
+        }
+
+        .card__face--back {
+            background-color: var(--card-back-bg);
+            color: var(--card-back-text);
+            transform: rotateY(180deg);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .back-content {
+            padding: 20px 25px;
+            overflow-y: auto;
+            flex-grow: 1;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .tag-header {
+            color: var(--btn-color);
+            font-weight: bold;
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            font-size: 1rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 2px;
+        }
+        
+        .tag-header:first-of-type {
+            margin-top: 0;
+        }
+
+        .example-block {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--accent-color);
+            padding: 10px 40px 10px 12px;
+            margin: 8px 0;
+            position: relative;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #555;
+        }
+
+        .btn-speak-sentence {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-speak-sentence:hover {
+            background-color: #eee;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--btn-color);
+            color: white;
+            border-color: var(--btn-color);
+        }
+        
+        .nav-btn:active {
+            transform: translateY(2px);
+        }
+
+        .progress {
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #666;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .back-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .back-content::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .back-content::-webkit-scrollbar-thumb {
+            background: #ccc; 
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scene">
+        <div class="card" id="flashcard">
+            <!-- 正面 -->
+            <div class="card__face card__face--front">
+                <div id="front-word" class="word-main">Loading...</div>
+                <div id="front-ipa" class="word-ipa"></div>
+                <div id="front-pos" class="word-pos"></div>
+                
+                <button class="btn-speak-front" id="btn-speak-word" title="發音">
+                    <!-- Speaker Icon -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+                
+                <div class="hint-text">點擊卡片查看解析</div>
+            </div>
+
+            <!-- 背面 -->
+            <div class="card__face card__face--back">
+                <div class="back-content" id="back-content">
+                    <!-- 內容由 JS 動態生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" id="prev-btn">← 上一個</button>
+        <span class="progress" id="progress-text">0 / 0</span>
+        <button class="nav-btn" id="next-btn">下一個 →</button>
+    </div>
+
+<script>
+// --- 1. CSV Data (50 words) ---
+const csvData = `mischievous [ˈmɪstʃɪvəs] (adj.),"【中文】淘氣的、愛惡作劇的
+【詞性變化】
+- mischief (n.)
+【學測點撥】
+- 注意讀音只有三個音節。
+【例句】
+He raised his mischievous green eyes toward the ceiling of Dink's bedroom.
+(他朝著 Dink 臥室的天花板揚起他那雙淘氣的綠眼睛。)"
+loyal [ˈlɔɪəl] (adj.),"【中文】忠實的、忠誠的
+【詞性變化】
+- loyalty (n.)
+【搭配詞】
+- be loyal to...
+【例句】
+I'm so happy to finally meet one of my most loyal fans.
+(我很高興終於能見到我最忠實的書迷之一。)"
+restless [ˈrɛstlɪs] (adj.),"【中文】焦躁不安的
+【學測點撥】
+- -less 是否定字尾。
+- 形容因無聊或期待而坐立難安。
+【例句】
+Some of the kids started getting restless.
+(有些孩子開始變得焦躁不安。)"
+peculiar [pɪˈkjuljɚ] (adj.),"【中文】奇怪的、特殊的
+【學測點撥】
+- 學測閱讀常出現，可用來代換 odd 或 strange。
+【例句】
+He said something very peculiar in his letter.
+(他在信中說了一些非常奇怪的話。)"
+ransom [ˈrænsəm] (n.),"【中文】贖金
+【搭配詞】
+- hold someone for ransom
+【例句】
+Maybe someone kidnapped him for a ransom!
+(或許有人綁架他是為了贖金！)"
+itinerary [aɪˈtɪnəˌrɛri] (n.),"【中文】行程表、旅行路線
+【學測點撥】
+- 生活化考題（旅遊情境）的高頻率單字。
+【例句】
+All I have is his itinerary.
+(我有的就只有他的行程表。)"
+suspect [ˈsʌspɛkt] (n.),"【中文】嫌疑犯
+【詞性變化】
+- suspicion (n.)
+【學測點撥】
+- 作動詞時讀音為 [səˈspɛkt]。
+【例句】
+Detectives should consider everyone a suspect.
+(偵探應該把每個人都視為嫌疑犯。)"
+register [ˈrɛdʒɪstɚ] (n.),"【中文】登記簿、名冊
+【搭配詞】
+- register for... (v. 註冊、報名)
+【例句】
+He flipped through the hotel register.
+(他翻閱了飯店登記簿。)"
+muffled [ˈmʌfəld] (adj.),"【中文】（聲音）悶住的、聽不清楚的
+【例句】
+The voice was muffled, but it was definitely yelling, 'HELP!'.
+(那聲音悶悶的，但確實是在喊著「救命！」。)"
+dedicate [ˈdɛdəˌket] (v.),"【中文】獻給、奉獻
+【搭配詞】
+- dedicate A to B
+【學測點撥】
+- dedicate A to B 中的 to 是介係詞，後接 N 或 V-ing。
+【例句】
+I'll dedicate my next book to my three new friends!
+(我會把我的下一本書獻給這三位新朋友！)"
+fangs [fæŋz] (n.),"【中文】尖牙、犬齒
+【例句】
+Dink slipped the plastic fangs into his mouth.
+(Dink 將塑膠尖牙塞進嘴裡。)"
+costume [ˈkɑstjum] (n.),"【中文】服裝、戲服
+【例句】
+Wait till I put on the rest of my costume.
+(等我穿上剩下的服裝。)"
+mustache [ˈmʌstæʃ] (n.),"【中文】鬍鬚、八字鬍
+【例句】
+He had dark curly hair, a droopy mustache.
+(他有一頭黑色捲髮、垂下的鬍鬚。)"
+trampled [ˈtræmpəld] (v.),"【中文】踩踏、踐踏
+【學測點撥】
+- 常用於形容人群推擠或抽象的「踐踏權利」。
+【例句】
+Dink stood on the bench so he wouldn't get trampled.
+(Dink 站在長椅上，以免被踩踏。)"
+suspicious [səˈspɪʃəs] (adj.),"【中文】可疑的
+【搭配詞】
+- be suspicious of...
+【例句】
+We'd look pretty suspicious.
+(我們會看起來相當可疑。)"
+persuade [pɚˈswed] (v.),"【中文】說服
+【詞性變化】
+- persuasion (n.)
+【搭配詞】
+- persuade someone to V
+【例句】
+Are you going to persuade him to give you the videotape?
+(你打算去說服他把錄影帶交給你嗎？)"
+vigorously [ˈvɪɡərəsli] (adv.),"【中文】有力地、劇烈地
+【學測點撥】
+- 形容動作程度，如劇烈搖頭。
+【例句】
+Howard rubbed Dink's hair vigorously.
+(Howard 有力地搓揉著 Dink 的頭髮。)"
+beckoned [ˈbɛkənd] (v.),"【中文】（招手）示意、召喚
+【例句】
+Then he beckoned Dink, Josh, and Ruth Rose inside.
+(接著他示意 Dink、Josh 和 Ruth Rose 進到屋內。)"
+recognized [ˈrɛkəɡˌnaɪzd] (v.),"【中文】認出、辨認
+【詞性變化】
+- recognition (n.)
+【例句】
+The kid who taped him might have recognized him.
+(拍下他的那個孩子可能會認出他。)"
+handcuffs [ˈhændˌkʌfs] (n.),"【中文】手銬
+【例句】
+He snapped handcuffs on the man's wrists.
+(他把手銬喀嚓一聲扣在那名男子的手腕上。)"
+burglarized [ˈbɝɡləˌraɪzd] (v.),"【中文】遭竊、被闖空門
+【例句】
+Two Green Lawn homes were burglarized last night.
+(昨晚有兩戶人家遭竊。)"
+vanishing [ˈvænɪʃɪŋ] (v.),"【中文】消失
+【搭配詞】
+- vanish into thin air
+【例句】
+Two pets vanishing on the same day is just too weird!
+(兩隻寵物在同一天消失簡直太詭異了！)"
+stray [stre] (adj.),"【中文】流浪的、迷路的
+【例句】
+People always bring her stray animals.
+(人們總是帶流浪動物去她那裡。)"
+clothespin [ˈklozˌpɪn] (n.),"【中文】曬衣夾
+【例句】
+We always keep a clothespin on his door.
+(我們總是在他的籠門上夾一個曬衣夾。)"
+preen [prin] (v.),"【中文】（鳥類）整理羽毛
+【例句】
+Mozart settled down to preen his feathers.
+(Mozart 停下來開始整理羽毛。)"
+pacing [ˈpesɪŋ] (v.),"【中文】踱步、來回走動
+【例句】
+Ruth Rose was pacing back and forth across the lawn.
+(Ruth Rose 在草坪上來回踱步。)"
+camouflaged [ˈkæməˌflɑʒd] (adj.),"【中文】迷彩的、偽裝的
+【例句】
+Josh wore camouflage pants.
+(Josh 穿著迷彩長褲。)"
+snapped [snæpt] (v.),"【中文】扣上、折斷
+【例句】
+He snapped handcuffs on the man's wrists.
+(他將手銬扣在那名男子的手腕上。)"
+terrified [ˈtɛrəˌfaɪd] (adj.),"【中文】恐懼的、受驚嚇的
+【詞性變化】
+- terrify (v.)
+【搭配詞】
+- be terrified of...
+【例句】
+She yelled into Fred Little's terrified face.
+(她對著 Fred Little 那張充滿恐懼的臉大吼。)"
+perish [ˈpɛrɪʃ] (v.),"【中文】死亡、枯萎
+【詞性變化】
+- perishable (adj. 易腐壞的)
+【例句】
+These children won't perish if they stay up a little longer.
+(這些孩子如果再熬夜一會兒也不會累壞的。)"
+humongous [hjuˈmɑŋɡəs] (adj.),"【中文】巨大的、龐大的
+【例句】
+This place is humongous!
+(這個地方真是龐大！)"
+chandelier [ˌʃændəˈlɪr] (n.),"【中文】水晶吊燈
+【例句】
+A black chandelier hung over the table.
+(桌子上方懸掛著一盞黑色的水晶吊燈。)"
+stumped [stʌmpt] (v.),"【中文】被難住、難倒
+【例句】
+This is one mystery that's got me stumped!
+(這是一個把我難住了的神祕謎團！)"
+miniature [ˈmɪnɪəˌtʃʊr] (adj.),"【中文】微型的、小型的
+【例句】
+A shelf held a miniature set of blue dishes.
+(架子上放著一套微型的藍色餐具。)"
+endangered [ɪnˈdendʒɚd] (adj.),"【中文】瀕危的
+【搭配詞】
+- endangered species
+【學測點撥】
+- 學測超高頻單字。
+【例句】
+I have a book about endangered birds.
+(我有一本關於瀕危鳥類的書。)"
+poachers [ˈpotʃɚz] (n.),"【中文】盜獵者
+【例句】
+Poachers catch rare animals and sell them for a lot of money.
+(盜獵者捕捉稀有動物並以高價賣出。)"
+oozed [uzd] (v.),"【中文】滲出、流出
+【例句】
+The rock walls oozed, and the floor was under water.
+(岩壁滲出水滴，地面則被淹沒在水下。)"
+trapdoor [ˈtræpˌdor] (n.),"【中文】活板門
+【例句】
+Dink pointed to a trapdoor in the floor.
+(Dink 指著地板上的一個活板門。)"
+hideous [ˈhɪdɪəs] (adj.),"【中文】极其醜陋的、可怕的
+【例句】
+Up ahead, he heard a hideous scream.
+(在前方，他聽到了一聲可怕的尖叫。)"
+scrambled [ˈskræmbəld] (v.),"【中文】攀爬、爭先恐後
+【搭配詞】
+- scramble for something (爭奪某物)
+【例句】
+They scrambled up Josh's rope ladder.
+(他們沿著 Josh 的繩梯爬進了閣樓。)"
+abbreviation [əˌbriviˈeʃən] (n.),"【中文】縮寫
+【詞性變化】
+- abbreviate (v.)
+【例句】
+Isn't CO the abbreviation for Colorado?
+(CO 不是科羅拉多州的縮寫嗎？)"
+invisible [ɪnˈvɪzəbl] (adj.),"【中文】隱形的、看不見的
+【詞性變化】
+- visible (adj. 看得見的)
+- vision (n. 視覺、遠見)
+【學測點撥】
+- 字根 vis (看)。
+【例句】
+Ruth Rose was practically invisible.
+(Ruth Rose 幾乎是隱形的。)"
+cellophane [ˈsɛləˌfen] (n.),"【中文】玻璃紙
+【例句】
+Dink removed the cellophane.
+(Dink 撕掉了玻璃紙。)"
+inverts [ɪnˈvɝts] (n.),"【中文】（郵票）倒印票
+【詞性變化】
+- invert (v. 倒置)
+【例句】
+You mean inverts, she said.
+(她說，妳是指倒印票吧。)"
+caption [ˈkæpʃən] (n.),"【中文】標題、說明文字
+【例句】
+The caption read: CURTISS JENNY...
+(說明文字寫著：柯蒂斯珍妮...)"
+magnifying [ˈmæɡnəˌfaɪɪŋ] (adj.),"【中文】放大的
+【詞性變化】
+- magnify (v. 放大)
+【例句】
+He whipped out a magnifying glass.
+(他猛地掏出了一個放大鏡。)"
+smudged [smʌdʒd] (v.),"【中文】弄髒、塗污
+【例句】
+His fingers were smudged gray from ink.
+(手指也被墨水弄髒變成了灰色。)"
+associate [əˈsoʃɪˌet] (n.),"【中文】夥伴、同事
+【搭配詞】
+- associate A with B (v. 把 A 與 B 聯想在一起)
+【例句】
+This is my associate, Doris Duncan said.
+(Doris Duncan 說，這是我的夥伴。)"
+commotion [kəˈmoʃən] (n.),"【中文】騷動、混亂
+【搭配詞】
+- cause a commotion
+【例句】
+All this commotion over a tiny piece of paper!
+(為了這麼一小張紙竟然引起這麼大的騷動！)"
+moisture [ˈmɔɪstʃɚ] (n.),"【中文】濕氣、水分
+【詞性變化】
+- moisturize (v. 保濕)
+- moisturizer (n. 保濕乳液)
+【例句】
+Moisture began gathering on the stamps.
+(郵票上開始聚集濕氣。)"`;
+
+let cards = [];
+let currentIndex = 0;
+let isFlipped = false;
+const synth = window.speechSynthesis;
+let voices = [];
+let currentUtterance = null;
+
+function parseCSV(text) {
+    let rows = [];
+    let currentRow = [];
+    let curVal = '';
+    let insideQuote = false;
+
+    for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        let nextChar = text[i+1];
+
+        if (char === '"') {
+            if (insideQuote && nextChar === '"') {
+                curVal += '"';
+                i++;
+            } else {
+                insideQuote = !insideQuote;
+            }
+        } else if (char === ',' && !insideQuote) {
+            currentRow.push(curVal.trim());
+            curVal = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuote) {
+            if (curVal || currentRow.length > 0) {
+                currentRow.push(curVal.trim());
+                rows.push(currentRow);
+                currentRow = [];
+                curVal = '';
+            }
+        } else {
+            curVal += char;
+        }
+    }
+    if (curVal || currentRow.length > 0) {
+        currentRow.push(curVal.trim());
+        rows.push(currentRow);
+    }
+    return rows;
+}
+
+function processData(rawRows) {
+    let processed = [];
+    rawRows = rawRows.filter(row => row.length >= 2);
+
+    rawRows.forEach(row => {
+        const frontRaw = row[0];
+        const backRaw = row[1];
+
+        const frontRegex = /^(.+?)\s+(\[.+?\])\s*(\(.*\))$/; 
+        const match = frontRaw.match(frontRegex);
+        
+        let word = frontRaw;
+        let ipa = "";
+        let pos = "";
+
+        if (match) {
+            word = match[1].trim();
+            ipa = match[2].trim();
+            pos = match[3].trim();
+        } else {
+            const parts = frontRaw.split('[');
+            if (parts.length > 1) {
+                word = parts[0].trim();
+                ipa = '[' + parts[1].split(']')[0] + ']';
+                const posParts = frontRaw.split(')'); 
+            }
+        }
+
+        let exampleSentence = "";
+        const lines = backRaw.split('\n');
+        let foundExample = false;
+        let htmlParts = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) continue;
+
+            if (line.includes('【')) {
+                line = line.replace(/【(.*?)】/, '<span class="tag-header">【$1】</span>');
+                htmlParts.push(line);
+                if (line.includes('例句')) foundExample = true;
+                else foundExample = false;
+            } else {
+                if (foundExample && !line.startsWith('(') && !line.includes('（')) {
+                    exampleSentence = line;
+                    htmlParts.push(`
+                        <div class="example-block">
+                            ${line}
+                            <button class="btn-speak-sentence" onclick="speakExample(event, '${escapeStr(line)}')">🔊</button>
+                        </div>
+                    `);
+                } else {
+                    htmlParts.push(`<div>${line}</div>`);
+                }
+            }
+        }
+
+        processed.push({
+            word,
+            ipa,
+            pos,
+            backHTML: htmlParts.join(''),
+            exampleSentence
+        });
+    });
+
+    return processed;
+}
+
+function init() {
+    const rawData = parseCSV(csvData);
+    cards = processData(rawData);
+    
+    loadVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    renderCard(currentIndex);
+    updateProgress();
+
+    document.getElementById('flashcard').addEventListener('click', flipCard);
+    document.getElementById('prev-btn').addEventListener('click', prevCard);
+    document.getElementById('next-btn').addEventListener('click', nextCard);
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') nextCard();
+        if (e.key === 'ArrowLeft') prevCard();
+        if (e.key === ' ' || e.key === 'Enter') flipCard();
+    });
+
+    document.getElementById('btn-speak-word').addEventListener('click', (e) => {
+        e.stopPropagation();
+        speak(cards[currentIndex].word);
+    });
+}
+
+function loadVoices() {
+    voices = synth.getVoices();
+}
+
+function renderCard(index) {
+    const card = cards[index];
+    
+    document.getElementById('front-word').textContent = card.word;
+    document.getElementById('front-ipa').textContent = card.ipa;
+    document.getElementById('front-pos').textContent = card.pos;
+    document.getElementById('back-content').innerHTML = card.backHTML;
+
+    const cardEl = document.getElementById('flashcard');
+    cardEl.classList.remove('is-flipped');
+    isFlipped = false;
+}
+
+function escapeStr(str) {
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+window.speakExample = function(event, text) {
+    event.stopPropagation();
+    speak(text);
+}
+
+function flipCard() {
+    const card = document.getElementById('flashcard');
+    card.classList.toggle('is-flipped');
+    isFlipped = !isFlipped;
+}
+
+function nextCard() {
+    if (currentIndex < cards.length - 1) {
+        currentIndex++;
+        renderCard(currentIndex);
+        updateProgress();
+    }
+}
+
+function prevCard() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        renderCard(currentIndex);
+        updateProgress();
+    }
+}
+
+function updateProgress() {
+    document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${cards.length}`;
+}
+
+// 最終修正版：零延遲 + 防止音頭切斷
+function speak(text) {
+    // 1. 強制重置 (解決 Chrome 偶爾發音卡住的問題)
+    if (synth.speaking) {
+        synth.cancel();
+    }
+    
+    // 2. 技巧：前方加空白(防切頭)，後方加句點(防切尾)
+    // 這裡我們不再使用 setTimeout，而是依賴這個"空白字元"被處理的時間差
+    // 來達到硬體暖機的效果，同時不產生人類可感知的延遲。
+    const textToSpeak = " " + text + ".";
+
+    currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+    currentUtterance.rate = 0.85; 
+    currentUtterance.lang = 'en-US';
+
+    const preferredVoices = voices.filter(v => 
+        (v.name.includes('Google') && v.lang.includes('en-US')) || 
+        (v.name.includes('Samantha')) ||
+        (v.lang.includes('en') && v.localService)
+    );
+
+    if (preferredVoices.length > 0) {
+        currentUtterance.voice = preferredVoices[0];
+    }
+
+    // 3. 立即播放，無計時器
+    synth.speak(currentUtterance);
+}
+
+init();
+
+</script>
+</body>
+</html>
